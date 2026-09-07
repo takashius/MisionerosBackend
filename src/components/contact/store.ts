@@ -3,6 +3,7 @@ import { ContactMessage } from "./model";
 import { StoreResponse } from "../../types/general";
 import { mailer } from "../../middleware/mailer";
 import config from "../../config/commons";
+import { getMailBranding } from "../../config/mailBranding";
 
 function clean(value: unknown) {
   const trimmed = String(value || "").trim();
@@ -46,8 +47,11 @@ export async function createMessage(data: any): Promise<StoreResponse> {
       mensaje,
     });
 
-    const notifyTo = config.userAdminEmail?.trim();
-    if (notifyTo) {
+    const notifyTo =
+      process.env.CONTACT_NOTIFY_EMAIL?.trim() ||
+      process.env.MAIL_BRAND_EMAIL?.trim() ||
+      config.mailer.fromEmail;
+    if (notifyTo && validator.isEmail(notifyTo)) {
       const body = `
         <p><strong>Nombre:</strong> ${escapeHtml(nombre)}</p>
         <p><strong>Correo:</strong> ${escapeHtml(email)}</p>
@@ -56,7 +60,7 @@ export async function createMessage(data: any): Promise<StoreResponse> {
         <p>${escapeHtml(mensaje).replace(/\n/g, "<br />")}</p>
       `;
       void mailer(
-        {},
+        getMailBranding(),
         notifyTo,
         "Equipo CEV",
         `Contacto web: ${asunto}`,
