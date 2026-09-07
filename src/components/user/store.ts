@@ -228,11 +228,10 @@ export async function updateUser(
     if (user.phone) foundUser.phone = user.phone;
     if (user.bio) foundUser.bio = user.bio;
     if (user.address) foundUser.address = user.address;
-    if (user.password) {
+    // La clave no se cambia en PATCH /user. Va por change_password o recovery.
+    if (selfProfile && user.password) {
       foundUser.password = user.password;
-      if (selfProfile) {
-        foundUser.hasLoggedInBefore = true;
-      }
+      foundUser.hasLoggedInBefore = true;
     }
 
     if (!selfProfile && user.role) {

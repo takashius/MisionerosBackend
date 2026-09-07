@@ -153,6 +153,8 @@ const update = {
   patch: {
     tags: ["Users"],
     summary: "Actualizar usuario (ADMIN / SUPER_ADMIN)",
+    description:
+      "No acepta `password`. Para cambiar la clave use `POST /user/change_password/:userId`.",
     parameters: [
       {
         name: "Authorization",
