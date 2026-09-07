@@ -1,6 +1,7 @@
 import { User } from "../components/user/model";
 import config from "../config/commons";
 import { ROLES } from "../config/roles";
+import { seedOfficialSchedule } from "../components/schedule/store";
 
 /** Crea el SUPER_ADMIN inicial si no existe ninguno y hay credenciales en env. */
 export default async function seedDefaultAdmin() {
@@ -34,4 +35,9 @@ export default async function seedDefaultAdmin() {
     active: true,
   });
   console.log(`[seed] SUPER_ADMIN creado: ${email}`);
+}
+
+export async function seedAppData() {
+  await seedDefaultAdmin();
+  await seedOfficialSchedule();
 }

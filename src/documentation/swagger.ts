@@ -1,5 +1,6 @@
 import userPaths, { definitions as userDefinitions } from "./user";
 import participantPaths, { definitions as participantDefinitions } from "./participant";
+import schedulePaths, { definitions as scheduleDefinitions } from "./schedule";
 
 const definition = {
   swagger: "2.0",
@@ -33,6 +34,10 @@ const definition = {
       name: "Scans",
       description: "Check-in y check-out",
     },
+    {
+      name: "Schedule",
+      description: "Cronograma de la asamblea",
+    },
   ],
   consumes: ["application/json"],
   produces: ["application/json"],
@@ -47,10 +52,12 @@ const definition = {
   paths: {
     ...userPaths,
     ...participantPaths,
+    ...schedulePaths,
   },
   definitions: {
     ...userDefinitions,
     ...participantDefinitions,
+    ...scheduleDefinitions,
   },
 };
 

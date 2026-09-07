@@ -9,7 +9,7 @@ import { assertCorsConfiguredForDeployedEnv, buildCorsOptions } from "./config/c
 import routes from "./config/routes";
 import definition from "./documentation/swagger";
 import { serve, setup } from "swagger-ui-express";
-import seedDefaultAdmin from "./middleware/seed";
+import { seedAppData } from "./middleware/seed";
 
 assertCorsConfiguredForDeployedEnv();
 
@@ -89,7 +89,7 @@ let serverInstance: any;
 const init = async () => {
   if (process.env.NODE_ENV !== "test") {
     await db(config.dbUrl);
-    await seedDefaultAdmin();
+    await seedAppData();
   }
   if (process.env.NODE_ENV !== "test") {
     serverInstance = server.listen(config.port, () => {
