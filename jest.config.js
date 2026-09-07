@@ -1,0 +1,21 @@
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
+  testMatch: ["**/tests/**/*.test.ts", "**/src/**/__tests__/*.test.ts"],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetModules: false,
+  testTimeout: 60000,
+  maxWorkers: 1,
+  collectCoverageFrom: [
+    "src/components/**/store.ts",
+    "src/utils/**/*.ts",
+    "src/middleware/auth.ts",
+    "!src/**/__tests__/**",
+    "!src/**/index.ts",
+  ],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "text-summary", "lcov"],
+};

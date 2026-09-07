@@ -1,0 +1,9 @@
+/.env
+/.vscode
+/node_modules
+/build
+/dist
+/.htaccess
+/.well-known
+/logs
+/coverage
