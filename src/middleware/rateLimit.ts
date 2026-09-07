@@ -26,6 +26,18 @@ export const recoveryRequestRateLimiter = rateLimit({
   },
 });
 
+export const contactRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: {
+    message: "Demasiados intentos. Intenta más tarde.",
+    code: "RATE_LIMITED",
+  },
+});
+
 export const recoverySubmitRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
