@@ -45,7 +45,14 @@ const updateRoles = {
             userId: { type: "string" },
             role: {
               type: "string",
-              enum: ["SUPER_ADMIN", "ADMIN", "MISIONERO", "PARTICIPANTE"],
+              enum: [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "COORDINADOR",
+                "LOGISTICA",
+                "MISIONERO",
+                "PARTICIPANTE",
+              ],
             },
           },
         },
@@ -136,7 +143,14 @@ const create = {
             password: { type: "string" },
             role: {
               type: "string",
-              enum: ["SUPER_ADMIN", "ADMIN", "MISIONERO", "PARTICIPANTE"],
+              enum: [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "COORDINADOR",
+                "LOGISTICA",
+                "MISIONERO",
+                "PARTICIPANTE",
+              ],
               description: "Por defecto PARTICIPANTE",
             },
           },
@@ -176,7 +190,14 @@ const update = {
             phone: { type: "string" },
             role: {
               type: "string",
-              enum: ["SUPER_ADMIN", "ADMIN", "MISIONERO", "PARTICIPANTE"],
+              enum: [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "COORDINADOR",
+                "LOGISTICA",
+                "MISIONERO",
+                "PARTICIPANTE",
+              ],
             },
           },
         },
@@ -421,7 +442,14 @@ const definitions = {
       date: { type: "string", format: "date" },
       role: {
         type: "string",
-        enum: ["SUPER_ADMIN", "ADMIN", "MISIONERO", "PARTICIPANTE"],
+        enum: [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "COORDINADOR",
+                "LOGISTICA",
+                "MISIONERO",
+                "PARTICIPANTE",
+              ],
       },
     },
   },

@@ -40,6 +40,7 @@ const config = {
   staticRoute: process.env.PUBLIC_ROUTE || "/static",
   filesRoute: process.env.FILES_ROUTE || "/files",
   dev: nodeEnv === "development" || nodeEnv === "test",
+  publicAppUrl: process.env.PUBLIC_APP_URL || "http://localhost:3050",
   userAdminEmail: process.env.USER_ADMIN_EMAIL,
   userAdminPassword: process.env.USER_ADMIN_PASSWORD,
   userAdminName: process.env.USER_ADMIN_NAME || "Administrador",

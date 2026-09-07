@@ -2,7 +2,7 @@
 
 API de la **I Asamblea de Misioneros Digitales** (Caracas 2026, sede CEV). Express + TypeScript + MongoDB + JWT.
 
-No hay multi-tenant ni permisos por ruta. Un usuario tiene un solo rol: `SUPER_ADMIN`, `ADMIN`, `MISIONERO` o `PARTICIPANTE`.
+No hay multi-tenant. Un usuario de login (staff o cuenta de sistema) tiene un solo rol.
 
 ## Requisitos
 
@@ -32,11 +32,12 @@ Copia `.env.example`. Lo mínimo para desarrollo:
 | `PORT` | Puerto HTTP (`3040`) |
 | `JWT_KEY` | Firma de tokens (24 h) |
 | `CORS_ORIGINS` | Orígenes permitidos (`http://localhost:3050`) |
+| `PUBLIC_APP_URL` | URL del frontend para el enlace del pase en el correo |
 | `USER_ADMIN_EMAIL` | Correo del admin inicial |
 | `USER_ADMIN_PASSWORD` | Contraseña del admin inicial |
 | `USER_ADMIN_NAME` | Nombre del admin inicial |
 
-Mailjet y Cloudinary son opcionales en local; ver `.env.example`.
+Mailjet y Cloudinary son opcionales en local; ver `.env.example`. WhatsApp / OpenWA no se integran.
 
 ## Scripts
 
@@ -53,9 +54,7 @@ Mailjet y Cloudinary son opcionales en local; ver `.env.example`.
 
 `POST /user/login` con `{ "email", "password" }` devuelve JWT y `role` como array.
 
-El panel del frontend solo admite `SUPER_ADMIN` y `ADMIN`. El pase digital y el escáner no usan este login todavía.
-
-Endpoints útiles:
+Endpoints de usuarios:
 
 - `POST /user/login`
 - `POST /user/logout` (Bearer)
@@ -68,19 +67,44 @@ Endpoints útiles:
 - `POST /user/change_password/:userId` — cambio de clave por un admin
 - `GET /active-response` — ping
 
+## Participantes y acreditación
+
+Aforo máximo **80**. Estados: `registrado` → `confirmado` → `checkin_realizado` → `checkout_realizado` (también `cancelado` / `no_asistira`).
+
+- `POST /participant/register` — público
+- `GET /participant` — staff, filtros `estado`, `tipo`, `search`, `page`
+- `GET /participant/stats` — KPIs
+- `GET /participant/by-token/:publicToken` — pase público
+- `GET /participant/lookup/:documentoId` — consulta pública de credencial (solo si ya está confirmada)
+- `GET /participant/by-document/:documentoId` — ficha para el escáner
+- `PATCH /participant/:id/confirm-payment` — `{ referenciaComprobante }` (ADMIN / COORDINADOR)
+- `PATCH /participant/:id/fix-typo` — corrección tipográfica (ADMIN / LOGISTICA)
+- `PATCH /participant/:id/status` — `cancelado` / `no_asistira` desde `registrado`
+- `PATCH /participant/:id/lodging` — `habitacionAsignada`
+- `POST /scan/validate` — `{ publicToken, accion: 'checkin' | 'checkout' }`
+
 ## Roles
 
-- **SUPER_ADMIN**: todo, incluido asignar `SUPER_ADMIN`.
-- **ADMIN**: usuarios, excepto crear/editar/borrar `SUPER_ADMIN`.
-- **MISIONERO / PARTICIPANTE**: solo su cuenta.
+| Rol | Panel | Notas |
+|---|---|---|
+| `SUPER_ADMIN` | Sí | Todo, incluido asignar `SUPER_ADMIN` |
+| `ADMIN` | Sí | Usuarios (excepto crear/editar `SUPER_ADMIN`), pagos y escáner |
+| `COORDINADOR` | Sí | Listado y confirmar pago |
+| `LOGISTICA` | Sí | Escáner y corrección tipográfica |
+| `MISIONERO` | No | Compatibilidad |
+| `PARTICIPANTE` | No | Cuenta de sistema, no es el asistente del evento |
+
+El asistente del evento es el modelo **Participant** (`tipo`: misionero, coordinador, ponente, sacerdote, obispo), no el rol de login.
 
 ## Estructura
 
 ```
 src/
-  config/          # DB, CORS, roles, rutas
-  components/user/ # modelo, store, controller, network
-  middleware/      # auth JWT, seed, rate limit, mail, storage
-  documentation/   # Swagger
+  config/                 # DB, CORS, roles, aforo, rutas
+  components/user/        # cuentas de staff
+  components/participant/ # registro y acreditación
+  components/scan/        # check-in / check-out
+  middleware/             # auth JWT, seed, rate limit, mail, storage
+  documentation/          # Swagger
   utils/
 ```

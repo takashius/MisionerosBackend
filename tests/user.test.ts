@@ -140,6 +140,8 @@ describe("User Routes", () => {
       expect.arrayContaining([
         ROLES.SUPER_ADMIN,
         ROLES.ADMIN,
+        ROLES.COORDINADOR,
+        ROLES.LOGISTICA,
         ROLES.MISIONERO,
         ROLES.PARTICIPANTE,
       ])
