@@ -2,10 +2,16 @@ import { Client, SendEmailV3_1, LibraryResponse } from "node-mailjet";
 import config from "../config/commons";
 import mails from "./mails/index";
 
-const mailjet = new Client({
-  apiKey: process.env.MJ_APIKEY_PUBLIC || "your-api-key",
-  apiSecret: process.env.MJ_APIKEY_PRIVATE || "your-api-secret",
-});
+function envKey(name: string) {
+  return (process.env[name] || "").trim().replace(/^['"]|['"]$/g, "");
+}
+
+function getMailjet() {
+  return new Client({
+    apiKey: envKey("MJ_APIKEY_PUBLIC") || "your-api-key",
+    apiSecret: envKey("MJ_APIKEY_PRIVATE") || "your-api-secret",
+  });
+}
 
 export async function mailer(
   mailConfig: any,
@@ -16,7 +22,8 @@ export async function mailer(
   message: string,
   type: number = 1,
   cotiza: any = null,
-  cc?: Array<{ email: string; name?: string }>
+  cc?: Array<{ email: string; name?: string }>,
+  replyTo?: { email: string; name?: string }
 ) {
   try {
     let body = "";
@@ -52,10 +59,17 @@ export async function mailer(
       }));
     }
 
+    if (replyTo?.email) {
+      messagePayload.ReplyTo = {
+        Email: replyTo.email,
+        Name: replyTo.name || replyTo.email,
+      };
+    }
+
     const data: SendEmailV3_1.Body = {
       Messages: [messagePayload],
     };
-    const result: LibraryResponse<SendEmailV3_1.Response> = await mailjet
+    const result: LibraryResponse<SendEmailV3_1.Response> = await getMailjet()
       .post("send", { version: "v3.1" })
       .request(data);
     const messageResult = result.body.Messages?.[0];

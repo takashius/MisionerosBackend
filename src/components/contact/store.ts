@@ -47,10 +47,14 @@ export async function createMessage(data: any): Promise<StoreResponse> {
       mensaje,
     });
 
-    const notifyTo =
-      process.env.CONTACT_NOTIFY_EMAIL?.trim() ||
-      process.env.MAIL_BRAND_EMAIL?.trim() ||
-      config.mailer.fromEmail;
+    const notifyTo = (
+      process.env.CONTACT_NOTIFY_EMAIL ||
+      process.env.MAIL_BRAND_EMAIL ||
+      config.mailer.fromEmail ||
+      ""
+    )
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
     if (notifyTo && validator.isEmail(notifyTo)) {
       const body = `
         <p><strong>Nombre:</strong> ${escapeHtml(nombre)}</p>
@@ -59,15 +63,21 @@ export async function createMessage(data: any): Promise<StoreResponse> {
         <p><strong>Asunto:</strong> ${escapeHtml(asunto)}</p>
         <p>${escapeHtml(mensaje).replace(/\n/g, "<br />")}</p>
       `;
-      void mailer(
+      const sent = await mailer(
         getMailBranding(),
         notifyTo,
         "Equipo CEV",
         `Contacto web: ${asunto}`,
         "Nuevo mensaje de contacto",
         body,
-        2
+        2,
+        null,
+        undefined,
+        { email, name: nombre }
       );
+      console.log("[contact] aviso enviado", { to: notifyTo, status: sent || "failed" });
+    } else {
+      console.warn("[contact] sin destinatario válido para el aviso");
     }
 
     return {
