@@ -38,6 +38,20 @@ export function getConfiguredOrigins(): string[] {
   return parseCsvEnv(process.env.CORS_ORIGINS);
 }
 
+export function isPrivateLanOrigin(origin: string): boolean {
+  const parsedOrigin = parseOrigin(origin);
+  if (!parsedOrigin) {
+    return false;
+  }
+
+  const hostname = parsedOrigin.hostname.toLowerCase();
+  return (
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(hostname)
+  );
+}
+
 export function isOriginAllowed(origin: string): boolean {
   const explicitOrigins = getConfiguredOrigins();
   if (explicitOrigins.some((allowed) => matchesWildcardPattern(origin, allowed))) {
@@ -88,7 +102,7 @@ export function buildCorsOptions(): CorsOptions {
         return callback(null, true);
       }
 
-      if (isPermissiveDev && !hasExplicitConfig) {
+      if (isPermissiveDev && (!hasExplicitConfig || isPrivateLanOrigin(origin))) {
         return callback(null, true);
       }
 

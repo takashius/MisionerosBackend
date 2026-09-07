@@ -54,6 +54,33 @@ describe("cors config", () => {
     });
   });
 
+  it("en development permite origenes de LAN aunque CORS_ORIGINS este definido", async () => {
+    process.env.NODE_ENV = "development";
+    process.env.CORS_ORIGINS = "http://localhost:3050";
+    delete process.env.CORS_ORIGIN_SUFFIXES;
+
+    const { isPrivateLanOrigin, buildCorsOptions } = await import("../cors");
+    const options = buildCorsOptions();
+
+    expect(isPrivateLanOrigin("http://192.168.0.120:3050")).toBe(true);
+    expect(isPrivateLanOrigin("https://10.0.0.8:3050")).toBe(true);
+
+    await new Promise<void>((resolve, reject) => {
+      (options.origin as Function)(
+        "http://192.168.0.120:3050",
+        (err: Error | null, allowed?: boolean) => {
+          try {
+            expect(err).toBeNull();
+            expect(allowed).toBe(true);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        }
+      );
+    });
+  });
+
   it("falla en staging si no hay origenes ni suffixes", async () => {
     process.env.NODE_ENV = "staging";
     delete process.env.CORS_ORIGINS;
