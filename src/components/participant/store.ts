@@ -11,10 +11,12 @@ import {
   LODGING_SLOTS,
   isParticipantState,
   isParticipantType,
+  isSexo,
   normalizeDocumentoId,
   type ParticipantState,
   type ParticipantType,
 } from "../../config/event";
+import type { IPagoInscripcion } from "./model";
 
 const TYPO_FIELDS = [
   "nombres",
@@ -25,6 +27,63 @@ const TYPO_FIELDS = [
   "organizacionComunidad",
 ] as const;
 
+function optionalString(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = String(value).trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
+function optionalDate(value: unknown): Date | undefined | "invalid" {
+  if (value == null || String(value).trim() === "") return undefined;
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) return "invalid";
+  return parsed;
+}
+
+function optionalAge(value: unknown): number | undefined | "invalid" {
+  if (value == null || String(value).trim() === "") return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 120) return "invalid";
+  return parsed;
+}
+
+function optionalBool(value: unknown): boolean | undefined {
+  if (value === true || value === false) return value;
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (["si", "sí", "true", "1"].includes(normalized)) return true;
+  if (["no", "false", "0"].includes(normalized)) return false;
+  return undefined;
+}
+
+function buildPagoInscripcion(data: any): IPagoInscripcion | undefined | "invalid" {
+  const src =
+    data?.pagoInscripcion && typeof data.pagoInscripcion === "object" ? data.pagoInscripcion : data;
+  const fecha = optionalDate(src.fecha ?? src.pagoFecha);
+  if (fecha === "invalid") return "invalid";
+  const pago: IPagoInscripcion = {
+    titular: optionalString(src.titular ?? src.pagoTitular),
+    banco: optionalString(src.banco ?? src.pagoBanco),
+    fecha,
+    referencia: optionalString(src.referencia ?? src.pagoReferencia),
+    monto: optionalString(src.monto ?? src.pagoMonto),
+    tasaBcv: optionalString(src.tasaBcv ?? src.pagoTasaBcv),
+    comprobanteUrl: optionalString(src.comprobanteUrl),
+  };
+  if (
+    !pago.titular &&
+    !pago.banco &&
+    !pago.fecha &&
+    !pago.referencia &&
+    !pago.monto &&
+    !pago.tasaBcv &&
+    !pago.comprobanteUrl
+  ) {
+    return undefined;
+  }
+  return pago;
+}
+
 export function toPublicParticipant(item: any) {
   return {
     _id: item._id,
@@ -33,15 +92,23 @@ export function toPublicParticipant(item: any) {
     apellidos: item.apellidos,
     documentoId: item.documentoId,
     fechaNacimiento: item.fechaNacimiento,
+    edad: item.edad,
     sexo: item.sexo,
     whatsapp: item.whatsapp,
     email: item.email,
     ciudad: item.ciudad,
+    arquidiocesis: item.arquidiocesis,
     organizacionComunidad: item.organizacionComunidad,
+    redesSociales: item.redesSociales,
     tipo: item.tipo,
     estado: item.estado,
     requiereAlojamiento: item.requiereAlojamiento,
     habitacionAsignada: item.habitacionAsignada ?? null,
+    tieneAlergiaEnfermedad: item.tieneAlergiaEnfermedad,
+    alergiasEnfermedadDetalle: item.alergiasEnfermedadDetalle,
+    estadoVida: item.estadoVida,
+    telefonoEmergencia: item.telefonoEmergencia,
+    pagoInscripcion: item.pagoInscripcion,
     pagoValidado: item.pagoValidado,
     comunicaciones: item.comunicaciones,
     createdAt: item.createdAt,
@@ -80,23 +147,34 @@ export async function registerParticipant(data: any): Promise<StoreResponse> {
       return { status: 400, message: "Correo electrónico no válido" };
     }
 
-    const required = [
-      "nombres",
-      "apellidos",
-      "fechaNacimiento",
-      "sexo",
-      "whatsapp",
-      "ciudad",
-      "organizacionComunidad",
-    ];
-    for (const field of required) {
-      if (!data[field] || String(data[field]).trim() === "") {
-        return { status: 400, message: `El campo ${field} es obligatorio` };
-      }
+    const nombres = optionalString(data.nombres);
+    const apellidos = optionalString(data.apellidos);
+    if (!nombres) {
+      return { status: 400, message: "El campo nombres es obligatorio" };
+    }
+    if (!apellidos) {
+      return { status: 400, message: "El campo apellidos es obligatorio" };
     }
 
-    if (!["M", "F"].includes(data.sexo)) {
+    const fechaNacimiento = optionalDate(data.fechaNacimiento);
+    if (fechaNacimiento === "invalid") {
+      return { status: 400, message: "Fecha de nacimiento inválida" };
+    }
+
+    const edad = optionalAge(data.edad);
+    if (edad === "invalid") {
+      return { status: 400, message: "Edad inválida" };
+    }
+
+    const sexoRaw = optionalString(data.sexo);
+    if (sexoRaw && !isSexo(sexoRaw)) {
       return { status: 400, message: "Sexo inválido" };
+    }
+    const sexo = sexoRaw && isSexo(sexoRaw) ? sexoRaw : undefined;
+
+    const pagoInscripcion = buildPagoInscripcion(data);
+    if (pagoInscripcion === "invalid") {
+      return { status: 400, message: "Fecha de pago inválida" };
     }
 
     const tipo: ParticipantType = isParticipantType(data.tipo) ? data.tipo : "misionero";
@@ -121,20 +199,38 @@ export async function registerParticipant(data: any): Promise<StoreResponse> {
       };
     }
 
+    const whatsapp = optionalString(data.whatsapp);
+    const ciudad = optionalString(data.ciudad);
+    const arquidiocesis = optionalString(data.arquidiocesis);
+    const organizacionComunidad = optionalString(data.organizacionComunidad);
+    const redesSociales = optionalString(data.redesSociales);
+    const tieneAlergiaEnfermedad = optionalBool(data.tieneAlergiaEnfermedad);
+    const alergiasEnfermedadDetalle = optionalString(data.alergiasEnfermedadDetalle);
+    const estadoVida = optionalString(data.estadoVida);
+    const telefonoEmergencia = optionalString(data.telefonoEmergencia);
+
     const created = await Participant.create({
       publicToken: randomUUID(),
-      nombres: String(data.nombres).trim(),
-      apellidos: String(data.apellidos).trim(),
+      nombres,
+      apellidos,
       documentoId,
-      fechaNacimiento: data.fechaNacimiento,
-      sexo: data.sexo,
-      whatsapp: String(data.whatsapp).trim(),
+      ...(fechaNacimiento ? { fechaNacimiento } : {}),
+      ...(edad ? { edad } : {}),
+      ...(sexo ? { sexo } : {}),
+      ...(whatsapp ? { whatsapp } : {}),
       email,
-      ciudad: String(data.ciudad).trim(),
-      organizacionComunidad: String(data.organizacionComunidad).trim(),
+      ...(ciudad ? { ciudad } : {}),
+      ...(arquidiocesis ? { arquidiocesis } : {}),
+      ...(organizacionComunidad ? { organizacionComunidad } : {}),
+      ...(redesSociales ? { redesSociales } : {}),
       tipo,
       estado: "registrado",
       requiereAlojamiento: data.requiereAlojamiento !== false,
+      ...(tieneAlergiaEnfermedad !== undefined ? { tieneAlergiaEnfermedad } : {}),
+      ...(alergiasEnfermedadDetalle ? { alergiasEnfermedadDetalle } : {}),
+      ...(estadoVida ? { estadoVida } : {}),
+      ...(telefonoEmergencia ? { telefonoEmergencia } : {}),
+      ...(pagoInscripcion ? { pagoInscripcion } : {}),
     });
 
     return { status: 201, message: toPublicParticipant(created) };
@@ -173,6 +269,7 @@ export async function listParticipants(options: {
           "email",
           "organizacionComunidad",
           "ciudad",
+          "arquidiocesis",
         ]),
         ...(normalized ? [{ documentoId: new RegExp(`^${normalized}`, "i") }] : []),
       ];

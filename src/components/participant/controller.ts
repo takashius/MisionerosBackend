@@ -18,6 +18,16 @@ export async function register(body: any) {
   return registerParticipant(body);
 }
 
+export async function uploadReceipt(file: any) {
+  if (!file?.path) {
+    return {
+      status: 400,
+      message: "No se recibió el comprobante. Envía multipart con el campo 'comprobante'.",
+    };
+  }
+  return { status: 201, message: { url: file.path } };
+}
+
 export async function list(query: {
   page?: string;
   search?: string;

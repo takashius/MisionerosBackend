@@ -8,6 +8,7 @@ import {
 import { PAYMENT_ROLES, SCAN_ROLES, STAFF_ROLES } from "../../config/roles";
 import {
   register,
+  uploadReceipt,
   list,
   stats,
   byToken,
@@ -17,6 +18,8 @@ import {
   status,
   lodging,
 } from "./controller";
+import { registerRateLimiter, receiptUploadRateLimiter } from "../../middleware/rateLimit";
+import { handleReceiptUpload } from "../../middleware/saveReceipt";
 
 const router = express.Router();
 
@@ -49,7 +52,7 @@ function sendStore(res: express.Response, result: { status: number; message: any
   );
 }
 
-router.post("/register", async (req, res) => {
+router.post("/register", registerRateLimiter, async (req, res) => {
   try {
     sendStore(res, await register(req.body));
   } catch (e) {
@@ -57,6 +60,20 @@ router.post("/register", async (req, res) => {
     res.status(500).send("Unexpected Error");
   }
 });
+
+router.post(
+  "/upload-receipt",
+  receiptUploadRateLimiter,
+  handleReceiptUpload,
+  async (req, res) => {
+    try {
+      sendStore(res, await uploadReceipt((req as any).uploadedReceiptFile));
+    } catch (e) {
+      console.log(e);
+      res.status(500).send("Unexpected Error");
+    }
+  }
+);
 
 router.get("/", auth(STAFF_ROLES), async (req: IGetUserAuthInfoRequest, res) => {
   if (!denyUnlessAuthenticated(req, res)) return;

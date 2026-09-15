@@ -49,3 +49,27 @@ export const recoverySubmitRateLimiter = rateLimit({
     code: "RATE_LIMITED",
   },
 });
+
+export const registerRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: {
+    message: "Demasiados intentos. Intenta más tarde.",
+    code: "RATE_LIMITED",
+  },
+});
+
+export const receiptUploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: {
+    message: "Demasiados intentos. Intenta más tarde.",
+    code: "RATE_LIMITED",
+  },
+});

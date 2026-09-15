@@ -31,6 +31,52 @@ describe("Participant routes", () => {
     expect(res.body.documentoId).toMatch(/^V/);
   });
 
+  it("permite registrar sin fecha de nacimiento", async () => {
+    const { fechaNacimiento: _omit, ...payload } = sampleParticipant();
+    const res = await request(server).post("/participant/register").send(payload);
+    expect(res.status).toBe(201);
+    expect(res.body.fechaNacimiento == null).toBe(true);
+  });
+
+  it("permite registrar solo con nombre, apellido, cédula y correo", async () => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const res = await request(server).post("/participant/register").send({
+      nombres: "Luis",
+      apellidos: "Mora",
+      documentoId: `V${id.slice(-8)}`,
+      email: `minimo-${id}@test.com`,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.sexo).toBeUndefined();
+    expect(res.body.whatsapp).toBeUndefined();
+  });
+
+  it("guarda los datos opcionales de la planilla", async () => {
+    const res = await request(server).post("/participant/register").send(
+      sampleParticipant({
+        edad: 34,
+        arquidiocesis: "Arquidiócesis de Caracas",
+        redesSociales: "@misionero",
+        estadoVida: "Casado/a",
+        telefonoEmergencia: "+584121000000",
+        tieneAlergiaEnfermedad: true,
+        alergiasEnfermedadDetalle: "Maní",
+        pagoInscripcion: {
+          titular: "Ana Pérez",
+          banco: "Banesco",
+          referencia: "REF-99",
+          monto: "150",
+          tasaBcv: "36.50",
+        },
+      })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body.edad).toBe(34);
+    expect(res.body.arquidiocesis).toBe("Arquidiócesis de Caracas");
+    expect(res.body.pagoInscripcion.referencia).toBe("REF-99");
+    expect(res.body.alergiasEnfermedadDetalle).toBe("Maní");
+  });
+
   it("rechaza documento duplicado", async () => {
     const payload = sampleParticipant({ documentoId: "V19999999" });
     await request(server).post("/participant/register").send(payload);

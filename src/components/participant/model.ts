@@ -15,21 +15,39 @@ export interface IPagoValidado {
   referenciaComprobante?: string;
 }
 
+export interface IPagoInscripcion {
+  titular?: string;
+  banco?: string;
+  fecha?: Date;
+  referencia?: string;
+  monto?: string;
+  tasaBcv?: string;
+  comprobanteUrl?: string;
+}
+
 export interface IParticipant {
   publicToken: string;
   nombres: string;
   apellidos: string;
   documentoId: string;
-  fechaNacimiento: Date;
-  sexo: Sexo;
-  whatsapp: string;
+  fechaNacimiento?: Date;
+  edad?: number;
+  sexo?: Sexo;
+  whatsapp?: string;
   email: string;
-  ciudad: string;
-  organizacionComunidad: string;
+  ciudad?: string;
+  arquidiocesis?: string;
+  organizacionComunidad?: string;
+  redesSociales?: string;
   tipo: ParticipantType;
   estado: ParticipantState;
   requiereAlojamiento: boolean;
   habitacionAsignada?: string | null;
+  tieneAlergiaEnfermedad?: boolean;
+  alergiasEnfermedadDetalle?: string;
+  estadoVida?: string;
+  telefonoEmergencia?: string;
+  pagoInscripcion?: IPagoInscripcion;
   pagoValidado: IPagoValidado;
   comunicaciones: {
     qrEnviadoEmail: boolean;
@@ -45,12 +63,15 @@ const participantSchema = new Schema<IParticipant>(
     nombres: { type: String, required: true, trim: true },
     apellidos: { type: String, required: true, trim: true },
     documentoId: { type: String, required: true, unique: true, trim: true, index: true },
-    fechaNacimiento: { type: Date, required: true },
-    sexo: { type: String, enum: SEXOS, required: true },
-    whatsapp: { type: String, required: true, trim: true },
+    fechaNacimiento: { type: Date },
+    edad: { type: Number, min: 1, max: 120 },
+    sexo: { type: String, enum: SEXOS },
+    whatsapp: { type: String, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    ciudad: { type: String, required: true, trim: true },
-    organizacionComunidad: { type: String, required: true, trim: true },
+    ciudad: { type: String, trim: true },
+    arquidiocesis: { type: String, trim: true },
+    organizacionComunidad: { type: String, trim: true },
+    redesSociales: { type: String, trim: true },
     tipo: {
       type: String,
       enum: PARTICIPANT_TYPES,
@@ -64,6 +85,19 @@ const participantSchema = new Schema<IParticipant>(
     },
     requiereAlojamiento: { type: Boolean, default: true },
     habitacionAsignada: { type: String, default: null },
+    tieneAlergiaEnfermedad: { type: Boolean },
+    alergiasEnfermedadDetalle: { type: String, trim: true },
+    estadoVida: { type: String, trim: true },
+    telefonoEmergencia: { type: String, trim: true },
+    pagoInscripcion: {
+      titular: { type: String, trim: true },
+      banco: { type: String, trim: true },
+      fecha: Date,
+      referencia: { type: String, trim: true },
+      monto: { type: String, trim: true },
+      tasaBcv: { type: String, trim: true },
+      comprobanteUrl: { type: String, trim: true },
+    },
     pagoValidado: {
       validado: { type: Boolean, default: false },
       validadoPor: { type: Schema.Types.ObjectId, ref: "User" },

@@ -41,6 +41,10 @@ export const CANCEL_STATES: ParticipantState[] = ["cancelado", "no_asistira"];
 export const SEXOS = ["M", "F"] as const;
 export type Sexo = (typeof SEXOS)[number];
 
+export function isSexo(value: unknown): value is Sexo {
+  return typeof value === "string" && SEXOS.includes(value as Sexo);
+}
+
 export const SCAN_ACTIONS = ["checkin", "checkout", "alojamiento_entrega"] as const;
 export type ScanAction = (typeof SCAN_ACTIONS)[number];
 

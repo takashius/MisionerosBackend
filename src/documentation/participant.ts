@@ -3,16 +3,35 @@ const participantBody = {
   apellidos: { type: "string" },
   documentoId: { type: "string" },
   fechaNacimiento: { type: "string", format: "date" },
+  edad: { type: "integer" },
   sexo: { type: "string", enum: ["M", "F"] },
   whatsapp: { type: "string" },
   email: { type: "string" },
   ciudad: { type: "string" },
+  arquidiocesis: { type: "string" },
   organizacionComunidad: { type: "string" },
+  redesSociales: { type: "string" },
   tipo: {
     type: "string",
     enum: ["misionero", "coordinador", "ponente", "sacerdote", "obispo"],
   },
   requiereAlojamiento: { type: "boolean" },
+  tieneAlergiaEnfermedad: { type: "boolean" },
+  alergiasEnfermedadDetalle: { type: "string" },
+  estadoVida: { type: "string" },
+  telefonoEmergencia: { type: "string" },
+  pagoInscripcion: {
+    type: "object",
+    properties: {
+      titular: { type: "string" },
+      banco: { type: "string" },
+      fecha: { type: "string", format: "date" },
+      referencia: { type: "string" },
+      monto: { type: "string" },
+      tasaBcv: { type: "string" },
+      comprobanteUrl: { type: "string" },
+    },
+  },
 };
 
 const authHeader = {
@@ -34,17 +53,7 @@ const register = {
         required: true,
         schema: {
           type: "object",
-          required: [
-            "nombres",
-            "apellidos",
-            "documentoId",
-            "fechaNacimiento",
-            "sexo",
-            "whatsapp",
-            "email",
-            "ciudad",
-            "organizacionComunidad",
-          ],
+          required: ["nombres", "apellidos", "documentoId", "email"],
           properties: participantBody,
         },
       },
@@ -217,8 +226,29 @@ export const definitions = {
   },
 };
 
+const uploadReceipt = {
+  post: {
+    tags: ["Participants"],
+    summary: "Subir comprobante de pago (público)",
+    consumes: ["multipart/form-data"],
+    parameters: [
+      {
+        name: "comprobante",
+        in: "formData",
+        type: "file",
+        required: true,
+      },
+    ],
+    responses: {
+      201: { description: "URL del comprobante" },
+      400: { description: "Archivo inválido" },
+    },
+  },
+};
+
 const paths = {
   "/participant/register": { post: register.post },
+  "/participant/upload-receipt": { post: uploadReceipt.post },
   "/participant": { get: list.get },
   "/participant/stats": { get: stats.get },
   "/participant/by-token/{publicToken}": { get: byToken.get },
