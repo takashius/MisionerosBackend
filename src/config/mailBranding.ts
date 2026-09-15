@@ -9,7 +9,7 @@ export function getMailBranding() {
   return {
     name: process.env.MAIL_BRAND_NAME || "Misioneros",
     email: process.env.MAIL_BRAND_EMAIL || process.env.MAIL_FROM_EMAIL || "",
-    phone: process.env.MAIL_BRAND_PHONE || "",
+    phone: process.env.MAIL_BRAND_PHONE || "0422-2940784",
     logo: process.env.MAIL_BRAND_LOGO || "",
     banner: process.env.MAIL_BRAND_BANNER || "",
     configMail: {
