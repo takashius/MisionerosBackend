@@ -18,15 +18,6 @@ import {
 } from "../../config/event";
 import type { IPagoInscripcion } from "./model";
 
-const TYPO_FIELDS = [
-  "nombres",
-  "apellidos",
-  "email",
-  "whatsapp",
-  "ciudad",
-  "organizacionComunidad",
-] as const;
-
 function optionalString(value: unknown): string | undefined {
   if (value == null) return undefined;
   const trimmed = String(value).trim();
@@ -420,21 +411,109 @@ export async function fixTypo(id: string, data: any): Promise<StoreResponse> {
       return { status: 404, message: "Participante no encontrado" };
     }
 
-    for (const field of TYPO_FIELDS) {
-      if (data[field] !== undefined && String(data[field]).trim() !== "") {
-        if (field === "email") {
-          const email = sanitizeEmailInput(data[field]);
-          if (!email) {
-            return { status: 400, message: "Correo electrónico no válido" };
-          }
-          found.email = email;
-        } else {
-          (found as any)[field] = String(data[field]).trim();
-        }
+    const $set: Record<string, unknown> = {};
+    const $unset: Record<string, 1> = {};
+
+    const putRequired = (field: "nombres" | "apellidos", raw: unknown) => {
+      if (raw === undefined) return null;
+      const value = optionalString(raw);
+      if (!value) return `El campo ${field} es obligatorio`;
+      $set[field] = value;
+      return null;
+    };
+    const nombresError = putRequired("nombres", data.nombres);
+    if (nombresError) return { status: 400, message: nombresError };
+    const apellidosError = putRequired("apellidos", data.apellidos);
+    if (apellidosError) return { status: 400, message: apellidosError };
+
+    if (data.email !== undefined) {
+      const email = sanitizeEmailInput(data.email);
+      if (!email) {
+        return { status: 400, message: "Correo electrónico no válido" };
       }
+      $set.email = email;
     }
-    await found.save();
-    return { status: 200, message: toPublicParticipant(found) };
+
+    const putOptionalString = (field: string, raw: unknown) => {
+      if (raw === undefined) return;
+      const value = optionalString(raw);
+      if (value) $set[field] = value;
+      else $unset[field] = 1;
+    };
+    putOptionalString("whatsapp", data.whatsapp);
+    putOptionalString("ciudad", data.ciudad);
+    putOptionalString("arquidiocesis", data.arquidiocesis);
+    putOptionalString("organizacionComunidad", data.organizacionComunidad);
+    putOptionalString("redesSociales", data.redesSociales);
+    putOptionalString("estadoVida", data.estadoVida);
+    putOptionalString("telefonoEmergencia", data.telefonoEmergencia);
+    putOptionalString("alergiasEnfermedadDetalle", data.alergiasEnfermedadDetalle);
+
+    if (data.sexo !== undefined) {
+      const sexoRaw = optionalString(data.sexo);
+      if (!sexoRaw) $unset.sexo = 1;
+      else if (!isSexo(sexoRaw)) return { status: 400, message: "Sexo inválido" };
+      else $set.sexo = sexoRaw;
+    }
+
+    if (data.edad !== undefined) {
+      const edad = optionalAge(data.edad);
+      if (edad === "invalid") return { status: 400, message: "Edad inválida" };
+      if (edad) $set.edad = edad;
+      else $unset.edad = 1;
+    }
+
+    if (data.fechaNacimiento !== undefined) {
+      const fechaNacimiento = optionalDate(data.fechaNacimiento);
+      if (fechaNacimiento === "invalid") {
+        return { status: 400, message: "Fecha de nacimiento inválida" };
+      }
+      if (fechaNacimiento) $set.fechaNacimiento = fechaNacimiento;
+      else $unset.fechaNacimiento = 1;
+    }
+
+    if (data.tieneAlergiaEnfermedad !== undefined) {
+      const value = optionalBool(data.tieneAlergiaEnfermedad);
+      if (value === undefined) $unset.tieneAlergiaEnfermedad = 1;
+      else $set.tieneAlergiaEnfermedad = value;
+    }
+
+    if (data.requiereAlojamiento !== undefined) {
+      $set.requiereAlojamiento = data.requiereAlojamiento !== false;
+    }
+
+    if (data.pagoInscripcion !== undefined || data.pagoTitular !== undefined) {
+      const src =
+        data.pagoInscripcion && typeof data.pagoInscripcion === "object"
+          ? { ...data.pagoInscripcion }
+          : data;
+      if (!optionalString(src.comprobanteUrl) && found.pagoInscripcion?.comprobanteUrl) {
+        src.comprobanteUrl = found.pagoInscripcion.comprobanteUrl;
+      }
+      const pagoInscripcion = buildPagoInscripcion({ pagoInscripcion: src });
+      if (pagoInscripcion === "invalid") {
+        return { status: 400, message: "Fecha de pago inválida" };
+      }
+      if (pagoInscripcion) $set.pagoInscripcion = pagoInscripcion;
+      else $unset.pagoInscripcion = 1;
+    }
+
+    delete $set.tipo;
+    delete $set.documentoId;
+    delete $set.publicToken;
+    delete $unset.tipo;
+    delete $unset.documentoId;
+    delete $unset.publicToken;
+
+    const update: Record<string, unknown> = {};
+    if (Object.keys($set).length) update.$set = $set;
+    if (Object.keys($unset).length) update.$unset = $unset;
+    if (Object.keys(update).length) {
+      await Participant.updateOne({ _id: found._id }, update);
+    }
+
+    const updated = await Participant.findById(id);
+    return { status: 200, message: toPublicParticipant(updated) };
   } catch (e: any) {
     if (e?.code === 11000) {
       return { status: 400, message: "Ese correo ya está en uso", detail: e };

@@ -174,4 +174,30 @@ describe("Participant routes", () => {
     expect(res.body.publicToken).toBe(created.body.publicToken);
     expect(res.body.documentoId).toBe(created.body.documentoId);
   });
+
+  it("LOGISTICA actualiza campos de la planilla sin cambiar el tipo", async () => {
+    const created = await request(server).post("/participant/register").send(sampleParticipant());
+    const { token } = await createAndLogin({
+      email: "log-edit@test.com",
+      role: ROLES.LOGISTICA,
+    });
+
+    const res = await request(server)
+      .patch(`/participant/${created.body._id}/fix-typo`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        arquidiocesis: "Arquidiócesis de Caracas",
+        redesSociales: "@ana",
+        estadoVida: "Casado/a",
+        telefonoEmergencia: "+584120000000",
+        tipo: "obispo",
+        pagoInscripcion: { titular: "Ana Pérez", referencia: "ABC-1" },
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.arquidiocesis).toBe("Arquidiócesis de Caracas");
+    expect(res.body.redesSociales).toBe("@ana");
+    expect(res.body.pagoInscripcion.referencia).toBe("ABC-1");
+    expect(res.body.tipo).toBe("misionero");
+  });
 });

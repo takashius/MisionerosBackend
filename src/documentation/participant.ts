@@ -145,7 +145,7 @@ const confirmPayment = {
 const fixTypo = {
   patch: {
     tags: ["Participants"],
-    summary: "Corrección tipográfica (no cambia token ni cédula)",
+    summary: "Editar datos del registro (no cambia token, cédula ni tipo)",
     parameters: [
       authHeader,
       { name: "id", in: "path", required: true, type: "string" },
@@ -160,7 +160,29 @@ const fixTypo = {
             email: { type: "string" },
             whatsapp: { type: "string" },
             ciudad: { type: "string" },
+            arquidiocesis: { type: "string" },
             organizacionComunidad: { type: "string" },
+            redesSociales: { type: "string" },
+            edad: { type: "integer" },
+            fechaNacimiento: { type: "string", format: "date" },
+            sexo: { type: "string", enum: ["M", "F"] },
+            estadoVida: { type: "string" },
+            telefonoEmergencia: { type: "string" },
+            tieneAlergiaEnfermedad: { type: "boolean" },
+            alergiasEnfermedadDetalle: { type: "string" },
+            requiereAlojamiento: { type: "boolean" },
+            pagoInscripcion: {
+              type: "object",
+              properties: {
+                titular: { type: "string" },
+                banco: { type: "string" },
+                fecha: { type: "string", format: "date" },
+                referencia: { type: "string" },
+                monto: { type: "string" },
+                tasaBcv: { type: "string" },
+                comprobanteUrl: { type: "string" },
+              },
+            },
           },
         },
       },
